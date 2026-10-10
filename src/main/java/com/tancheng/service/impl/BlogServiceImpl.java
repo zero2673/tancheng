@@ -12,7 +12,7 @@ import com.tancheng.entity.Follow;
 import com.tancheng.entity.User;
 import com.tancheng.mapper.BlogMapper;
 import com.tancheng.service.IBlogService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tancheng.service.IUserService;
 import com.tancheng.utils.SystemConstants;
 import com.tancheng.utils.UserHolder;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

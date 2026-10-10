@@ -1,11 +1,11 @@
 package com.tancheng.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 import com.tancheng.dto.LoginFormDTO;
 import com.tancheng.dto.Result;
 import com.tancheng.entity.User;
 
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * <p>

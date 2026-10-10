@@ -3,7 +3,7 @@ package com.tancheng.service.impl;
 import com.tancheng.entity.SeckillVoucher;
 import com.tancheng.mapper.SeckillVoucherMapper;
 import com.tancheng.service.ISeckillVoucherService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**

@@ -3,7 +3,7 @@ package com.tancheng.service.impl;
 import com.tancheng.entity.UserInfo;
 import com.tancheng.mapper.UserInfoMapper;
 import com.tancheng.service.IUserInfoService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**

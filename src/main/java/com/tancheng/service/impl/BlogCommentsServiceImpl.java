@@ -3,7 +3,7 @@ package com.tancheng.service.impl;
 import com.tancheng.entity.BlogComments;
 import com.tancheng.mapper.BlogCommentsMapper;
 import com.tancheng.service.IBlogCommentsService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
