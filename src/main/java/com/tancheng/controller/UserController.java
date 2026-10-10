@@ -9,11 +9,13 @@ import com.tancheng.entity.User;
 import com.tancheng.entity.UserInfo;
 import com.tancheng.service.IUserInfoService;
 import com.tancheng.service.IUserService;
+import com.tancheng.service.RateLimitService;
 import com.tancheng.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 /**
@@ -33,15 +35,39 @@ public class UserController {
     @Resource
     private IUserInfoService userInfoService;
 
+    @Resource
+    private RateLimitService rateLimitService;
+
     /**
      * 发送手机验证码
      */
+        /**
+     * 发送手机验证码。IP 维度限流：同一 IP 每分钟最多 10 次
+     */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
-        // TODO 发送短信验证码并保存验证码
+    public Result sendCode(@RequestParam("phone") String phone,
+                           HttpSession session,
+                           HttpServletRequest request) {
+        String ip = getClientIp(request);
+        if (!rateLimitService.tryAcquire("limit:code:ip:" + ip, 10, 60_000L)) {
+            return Result.fail("操作过于频繁，请稍后再试");
+        }
+        return userService.sendCode(phone, session);
+    }
 
-       return userService.sendCode(phone, session);
-
+    /**
+     * 取真实客户端 IP（过 Nginx 时要看 X-Forwarded-For / X-Real-IP）
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isEmpty()) {
+            return forwarded.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isEmpty()) {
+            return realIp;
+        }
+        return request.getRemoteAddr();
     }
 //283583 fbf881e0805a4c0ea48711bed27d50f5
     /**

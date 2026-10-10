@@ -11,6 +11,7 @@ import com.tancheng.dto.UserDTO;
 import com.tancheng.entity.User;
 import com.tancheng.mapper.UserMapper;
 import com.tancheng.service.IUserService;
+import com.tancheng.service.RateLimitService;
 import com.tancheng.utils.RegexUtils;
 import com.tancheng.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private RateLimitService rateLimitService;
+
     @Override
     public Result sendCode(String phone, HttpSession session) {
         //1.校验手机号
@@ -54,6 +58,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         }
 
 
+        //2.1 同一手机号 1 分钟内只能请求一次
+        if (!rateLimitService.tryAcquire("limit:code:phone:" + phone, 1, 60_000L)) {
+            return Result.fail("验证码已发送，请 1 分钟后再试");
+        }
         //3.符合，生成验证码
         String code = RandomUtil.randomNumbers(6);
         //4.保存验证码到redis

@@ -1,7 +1,6 @@
 package com.tancheng.utils;
 
 import cn.hutool.core.lang.UUID;
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -45,22 +44,4 @@ static {
 stringRedisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(lockName+name),
         ID_PREFIX+Thread.currentThread().getId());
     }
- /*   public void unLock() {
-        //获取线程标示
-        String threadId = ID_PREFIX+Thread.currentThread().getId();
-
-        //获取锁中的标示
-        String id = stringRedisTemplate.opsForValue().get(lockName + name);
-        //判断标示是否一致
-
-if(threadId.equals(id)){
-
-//释放锁
-    stringRedisTemplate.delete(lockName+name);
-
-}
-
-
-
-    }*/
 }

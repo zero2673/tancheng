@@ -27,6 +27,8 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/upload/**",
                         "/blog/hot",
                         "/blog-comments/of/blog/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
                         "/user/code",
                         "/user/login"
                 ).order(1);
