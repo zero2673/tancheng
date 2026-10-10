@@ -8,13 +8,13 @@ import com.tancheng.dto.UserDTO;
 import com.tancheng.entity.Follow;
 import com.tancheng.mapper.FollowMapper;
 import com.tancheng.service.IFollowService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tancheng.service.IUserService;
 import com.tancheng.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import java.util.Collections;
 import java.util.List;

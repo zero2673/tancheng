@@ -2,7 +2,7 @@ package com.tancheng.service;
 
 import com.tancheng.dto.Result;
 import com.tancheng.entity.Voucher;
-import com.baomidou.mybatisplus.extension.service.IService;
+import com.baomidou.mybatisplus.spring.service.IService;
 
 /**
  * <p>

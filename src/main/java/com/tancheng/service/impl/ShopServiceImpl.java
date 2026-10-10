@@ -9,7 +9,7 @@ import com.tancheng.dto.Result;
 import com.tancheng.entity.Shop;
 import com.tancheng.mapper.ShopMapper;
 import com.tancheng.service.IShopService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.spring.service.impl.ServiceImpl;
 import com.tancheng.utils.CacheClient;
 import com.tancheng.utils.SystemConstants;
 import org.springframework.data.geo.Distance;
@@ -21,7 +21,7 @@ import org.springframework.data.redis.domain.geo.GeoReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
