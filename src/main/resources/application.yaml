@@ -30,3 +30,6 @@ mybatis-plus:
 logging:
   level:
     com.tancheng: debug
+
+app:
+  upload-dir: ${UPLOAD_DIR:uploads}
