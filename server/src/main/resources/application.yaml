@@ -1,5 +1,12 @@
 server:
   port: ${SERVER_PORT:8081}
+  tomcat:
+    threads:
+      max: 400
+      min-spare: 50
+    # 压测发现 500 并发时接收队列被打满，出现连接失败，这里上调队列与连接上限
+    accept-count: 1000
+    max-connections: 10000
 
 spring:
   application:

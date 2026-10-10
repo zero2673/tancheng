@@ -29,3 +29,8 @@ nginx-1.18.0/
 logs/
 *.tmp
 .DS_Store
+
+# JMeter 压测产物
+loadtest/*.jtl
+loadtest/jmeter.log
+loadtest/report/
