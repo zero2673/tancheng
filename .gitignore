@@ -1,36 +1,31 @@
-HELP.md
-target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
+# ===== IDE =====
+.idea/
 *.iml
+*.iws
 *.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
 .vscode/
 
-### 本地配置（含密码），不要提交 ###
-src/main/resources/application-local.yaml
+# ===== 前端（web/）=====
+web/node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== 后端（server/）=====
+server/target/
+server/out/
+
+# 本地配置与密码，绝不提交
+server/src/main/resources/application-local.yaml
+
+# ===== Nginx 发行包与老静态前端 =====
+# 部署用 Docker 镜像里的 nginx，本机这份不纳入版本管理
+nginx-1.18.0/
+
+# ===== 日志与临时文件 =====
+*.log
+logs/
+*.tmp
+.DS_Store
