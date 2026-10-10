@@ -43,4 +43,12 @@ public class VoucherOrderController {
         }
         return seckillResultService.subscribe(orderId);
     }
+
+    /**
+     * 模拟支付：真实项目里应该是支付网关的异步回调
+     */
+    @PostMapping("pay/{orderId}")
+    public Result payOrder(@PathVariable("orderId") Long orderId) {
+        return voucherOrderService.payOrder(orderId);
+    }
 }

@@ -11,6 +11,8 @@ import com.tancheng.service.ISeckillVoucherService;
 import com.tancheng.service.IVoucherOrderService;
 import com.tancheng.service.RateLimitService;
 import com.tancheng.service.SeckillResultService;
+import com.tancheng.utils.OrderDelayQueue;
+import com.tancheng.utils.RedisConstants;
 import com.tancheng.utils.RedisIdWorker;
 import com.tancheng.utils.UserHolder;
 import jakarta.annotation.PostConstruct;
@@ -25,10 +27,14 @@ import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.connection.stream.StreamReadOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +56,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private static final String STREAM_CONSUMER = "c1";
     private static final String SECKILL_LIMIT_KEY = "limit:seckill:";
 
+    /** 订单状态：1 未支付、2 已支付、4 已取消 */
+    private static final int ORDER_STATUS_UNPAID = 1;
+    private static final int ORDER_STATUS_PAID = 2;
+    private static final int ORDER_STATUS_CANCELLED = 4;
+
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
 
     static {
@@ -68,9 +79,14 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private SeckillResultService seckillResultService;
     @Resource
     private RateLimitService rateLimitService;
-    @Resource
+@Resource
     private ApplicationContext applicationContext;
+    @Resource
+    private OrderDelayQueue orderDelayQueue;
 
+    /** 未支付超时时间（毫秒），默认 15 分钟 */
+    @Value("${app.order-timeout-ms:900000}")
+    private long orderTimeoutMs;
     private final ExecutorService seckillOrderExecutor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "seckill-order-consumer");
         thread.setDaemon(true);
@@ -123,7 +139,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long userId = voucherOrder.getUserId();
         Long voucherId = voucherOrder.getVoucherId();
         // 一人一单：Lua 是第一道防线，这里是数据库层的兜底
-        long count = query().eq("user_id", userId).eq("voucher_id", voucherId).count();
+        // 注意：已取消（超时关单）的订单不能算重复下单，否则取消后用户永远下不了单
+        long count = query().eq("user_id", userId).eq("voucher_id", voucherId)
+                .ne("status", ORDER_STATUS_CANCELLED).count();
         if (count > 0) {
             log.error("不允许重复下单, userId=" + userId + ", voucherId=" + voucherId);
             seckillResultService.complete(voucherOrder.getId(), false, "不能重复下单");
@@ -140,9 +158,89 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             seckillResultService.complete(voucherOrder.getId(), false, "库存不足");
             return;
         }
-        save(voucherOrder);
-        seckillResultService.complete(voucherOrder.getId(), true, "下单成功");
+                save(voucherOrder);
+        // 事务提交后再投递延时消息，避免「事务回滚但延时消息已发出」的不一致
+        final Long orderId = voucherOrder.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                orderDelayQueue.add(orderId, System.currentTimeMillis() + orderTimeoutMs);
+            }
+        });
+        seckillResultService.complete(orderId, true, "下单成功");
     }
+    @Override
+    public Result payOrder(Long orderId) {
+        Long userId = UserHolder.getUser().getId();
+        VoucherOrder order = getById(orderId);
+        if (order == null) {
+            return Result.fail("订单不存在");
+        }
+        if (!userId.equals(order.getUserId())) {
+            return Result.fail("只能支付自己的订单");
+        }
+        if (order.getStatus() != null && order.getStatus() == ORDER_STATUS_PAID) {
+            return Result.fail("订单已支付");
+        }
+        boolean updated = update()
+                .set("status", ORDER_STATUS_PAID)
+                .set("pay_time", LocalDateTime.now())
+                .eq("id", orderId)
+                .eq("status", ORDER_STATUS_UNPAID)
+                .update();
+        if (!updated) {
+            return Result.fail("订单状态已变更，无法支付");
+        }
+        // 支付成功后从延时队列摘掉，避免到期被误取消
+        orderDelayQueue.remove(orderId);
+        return Result.ok();
+    }
+
+    /**
+     * 定时任务调用：取出到期仍未支付的订单，取消并回滚库存。
+     */
+    @Override
+    public int cancelTimeoutOrders() {
+        List<String> expiredOrderIds = orderDelayQueue.takeExpired(50);
+        if (expiredOrderIds == null || expiredOrderIds.isEmpty()) {
+            return 0;
+        }
+        int cancelled = 0;
+        for (String idText : expiredOrderIds) {
+            Long orderId;
+            try {
+                orderId = Long.valueOf(idText);
+            } catch (NumberFormatException e) {
+                continue;
+            }
+            VoucherOrder order = getById(orderId);
+            if (order == null || order.getStatus() == null || order.getStatus() != ORDER_STATUS_UNPAID) {
+                continue;
+            }
+            // 「状态仍是未支付」作为乐观条件：支付与取消并发时只有一个能生效
+            boolean updated = update()
+                    .set("status", ORDER_STATUS_CANCELLED)
+                    .eq("id", orderId)
+                    .eq("status", ORDER_STATUS_UNPAID)
+                    .update();
+            if (!updated) {
+                continue;
+            }
+            // 回滚库存：数据库 + Redis；并把用户从「一人一单」集合移除，允许重新下单
+            seckillVoucherService.update()
+                    .setSql("stock = stock + 1")
+                    .eq("voucher_id", order.getVoucherId())
+                    .update();
+            stringRedisTemplate.opsForValue().increment(RedisConstants.SECKILL_STOCK_KEY + order.getVoucherId());
+            stringRedisTemplate.opsForSet().remove(
+                    RedisConstants.SECKILL_ORDER_KEY + order.getVoucherId(),
+                    order.getUserId().toString());
+            cancelled++;
+            log.error("订单超时未支付，已取消并回滚库存, orderId=" + orderId);
+        }
+        return cancelled;
+    }
+
     private class VoucherOrderHandler implements Runnable {
         @Override
         public void run() {

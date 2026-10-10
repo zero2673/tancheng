@@ -30,6 +30,10 @@ mybatis-plus:
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
+  # 未支付订单超时时间（毫秒），默认 15 分钟
+  order-timeout-ms: ${ORDER_TIMEOUT_MS:900000}
+  # 超时订单扫描间隔（毫秒）
+  order-timeout-scan-ms: ${ORDER_TIMEOUT_SCAN_MS:10000}
 
 logging:
   level:
