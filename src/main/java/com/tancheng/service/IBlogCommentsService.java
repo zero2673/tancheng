@@ -1,14 +1,14 @@
 package com.tancheng.service;
 
-import com.tancheng.entity.BlogComments;
 import com.baomidou.mybatisplus.spring.service.IService;
+import com.tancheng.dto.Result;
+import com.tancheng.entity.BlogComments;
 
-/**
- * <p>
- *  服务类
- * </p>
- *
- */
 public interface IBlogCommentsService extends IService<BlogComments> {
 
+    Result saveComment(BlogComments comment);
+
+    Result queryCommentsByBlogId(Long blogId, Integer current);
+
+    Result deleteComment(Long id);
 }

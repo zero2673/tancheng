@@ -1,6 +1,7 @@
 package com.tancheng.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -54,6 +55,18 @@ public class BlogComments implements Serializable {
      * 回复的内容
      */
     private String content;
+
+    /**
+     * 评论人昵称（非表字段）
+     */
+    @TableField(exist = false)
+    private String name;
+
+    /**
+     * 评论人头像（非表字段）
+     */
+    @TableField(exist = false)
+    private String icon;
 
     /**
      * 点赞数
