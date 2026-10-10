@@ -1,0 +1,7 @@
+# 复制本文件为 application-local.yaml，填入自己的本地环境
+spring:
+  datasource:
+    password: 你的MySQL密码
+  redis:
+    host: 你的Redis地址
+    password: "你的Redis密码"
